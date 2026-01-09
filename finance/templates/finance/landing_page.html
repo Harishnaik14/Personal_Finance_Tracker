@@ -1,0 +1,725 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PFT - Smart Personal Finance Tracker</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Premium Dark Mode */
+            --primary: #6366f1; /* Indigo 500 - Vibrant */
+            --secondary: #a855f7; /* Purple 500 */
+            --accent: #38bdf8; /* Sky 400 */
+            --dark: #020617; /* Slate 950 - Deepest Blue/Black */
+            --light: #f8fafc; /* Slate 50 */
+            --glass: rgba(255, 255, 255, 0.03); /* Ultra subtle glass */
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8; /* Slate 400 */
+            --bg-color: var(--dark);
+            --card-bg: var(--glass);
+        }
+
+        [data-theme="light"] {
+            /* Crisp Light Mode */
+            --dark: #f1f5f9; /* Slate 100 */
+            --text-main: #0f172a; /* Slate 900 */
+            --text-muted: #64748b; /* Slate 500 */
+            --glass: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --bg-color: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --primary: #4f46e5; /* Indigo 600 - Readable on light */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Background effects */
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4; /* Slightly reduced opacity for cleaner look */
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: var(--primary); }
+        .blob-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: var(--secondary); animation-delay: 2s; }
+        .blob-3 { top: 40%; left: 30%; width: 300px; height: 300px; background: var(--accent); opacity: 0.2; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%; /* Reduced padding */
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(26, 26, 46, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+            transition: background 0.3s;
+        }
+
+        [data-theme="light"] nav {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .logo {
+            font-size: 1.5rem; /* Slightly smaller logo */
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover { color: var(--accent); }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--primary);
+            color: var(--text-main);
+            margin-left: 1rem;
+        }
+
+        .btn-outline:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: color 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            color: var(--accent);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 10%;
+            padding-top: 80px; 
+            position: relative;
+        }
+
+        .hero-content {
+            flex: 1;
+            padding-right: 50px;
+            animation: slideUp 1s ease-out;
+        }
+
+        .hero-img {
+            flex: 1;
+            /* Placeholder for a nice illustration if we had one, CSS shape for now */
+            height: 400px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 1.5s ease-out;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+        
+        .mock-card {
+            width: 80%;
+            height: 60%;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--text-main), var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        [data-theme="light"] h1 {
+             background: linear-gradient(to right, #333, #666);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+        }
+
+        p.lead {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+        }
+
+        /* Features Section */
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        /* Step number for How It Works */
+        .step-number {
+             background: linear-gradient(135deg, var(--primary), var(--secondary));
+             color: white;
+             width: 40px;
+             height: 40px;
+             border-radius: 50%;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             font-weight: bold;
+             margin-bottom: 1rem;
+             font-size: 1.2rem;
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        .card-text {
+            color: var(--text-muted);
+        }
+
+        /* Security Section */
+        .security-section {
+            background: rgba(0,0,0,0.05);
+            padding: 6rem 0;
+            text-align: center;
+        }
+
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+        }
+
+        .security-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 200px;
+        }
+
+        .security-icon {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            margin-top: 5rem;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .social-links {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+        
+        .social-links a {
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            transition: color 0.3s, transform 0.3s;
+        }
+        
+        .social-links a:hover {
+            color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+
+        .nav-right {
+            display: flex; 
+            align-items: center;
+        }
+
+        .mobile-auth-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .hero { 
+                flex-direction: column; 
+                text-align: center; 
+                padding-top: 120px; 
+                padding-left: 5%;
+                padding-right: 5%;
+            }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            
+            /* Mobile Nav */
+            .mobile-toggle { display: block; }
+            .desktop-auth-buttons { display: none; }
+            
+            .nav-links {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: var(--card-bg);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                align-items: center;
+                padding: 2rem 0;
+                border-bottom: 1px solid var(--glass-border);
+                display: none; /* Hidden by default */
+            }
+            
+            .nav-links.active {
+                display: flex;
+                animation: fadeIn 0.3s ease-out;
+            }
+
+            .nav-links a {
+                margin: 0;
+                margin-bottom: 1.5rem;
+                font-size: 1.2rem;
+            }
+
+            .mobile-auth-buttons {
+                display: flex;
+            }
+            
+            .container {
+                padding: 3rem 1.5rem;
+            }
+            
+            .security-badges {
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Blobs -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/" class="logo"><i class="fas fa-wallet"></i> Personal Finance Tracker</a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="#how-it-works">How it Works</a>
+            <a href="#security">Security</a>
+            <div class="mobile-auth-buttons">
+                 <a href="{% url 'login' %}" class="btn btn-outline" style="border: none; color: var(--text-main);">Log In</a>
+                 <a href="{% url 'register' %}" class="btn btn-primary">Get Started</a>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="desktop-auth-buttons">
+                <a href="{% url 'login' %}" class="btn btn-outline" style="border: none; color: var(--text-main);">Log In</a>
+                <a href="{% url 'register' %}" class="btn btn-primary" style="margin-left: 0.5rem;">Get Started</a>
+            </div>
+            <button class="mobile-toggle" id="mobileToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Master Your Money<br>With Confidence</h1>
+            <p class="lead">Track expenses, set goals, and participate in savings challenges. The smartest way to take control of your financial future starts here.</p>
+            <a href="{% url 'register' %}" class="btn btn-primary">Create Free Account</a>
+            <a href="#how-it-works" class="btn btn-outline">Learn More</a>
+            <button class="btn btn-link nav-link" id="themeToggle" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+        </div>
+        <div class="hero-img">
+            <div class="mock-card">
+                <div style="display:flex; justify-content:space-between; color:rgba(255,255,255,0.8);">
+                    <span>Current Balance</span>
+                    <i class="fas fa-signal"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700;">$24,500.00</div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <div style="font-size:0.8rem; opacity:0.7;">Account Holder</div>
+                        <div>John Doe</div>
+                    </div>
+                    <i class="fab fa-cc-visa" style="font-size:2rem;"></i>
+                </div>
+            </div>
+            <!-- Floating elements -->
+            <div style="position: absolute; top: -20px; right: 20px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 10px; backdrop-filter: blur(5px); animation: float 6s infinite ease-in-out;">
+                <i class="fas fa-arrow-down" style="color: #4ade80;"></i> Income <b>+$3,200</b>
+            </div>
+            <div style="position: absolute; bottom: -20px; left: -20px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 10px; backdrop-filter: blur(5px); animation: float 8s infinite ease-in-out 1s;">
+                <i class="fas fa-piggy-bank" style="color: #f472b6;"></i> Savings <b>+15%</b>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="features-grid">
+            <div class="glass-card">
+                <div class="step-number">1</div>
+                <h3 class="card-title">Register & Set Up</h3>
+                <p class="card-text">Create an account in seconds. Set your preferred currency and opening balance to kickstart your journey.</p>
+            </div>
+            <div class="glass-card">
+                <div class="step-number">2</div>
+                <h3 class="card-title">Track Transactions</h3>
+                <p class="card-text">Log income and expenses easily. Categorize them to visualize your spending habits with intuitive charts.</p>
+            </div>
+            <div class="glass-card">
+                <div class="step-number">3</div>
+                <h3 class="card-title">Set Financial Goals</h3>
+                <p class="card-text">Dreaming of a vacation or a new gadget? Set a goal, and we'll help you track your progress until you reach it.</p>
+            </div>
+            <div class="glass-card">
+                <div class="step-number">4</div>
+                <h3 class="card-title">Join Challenges</h3>
+                <p class="card-text">Participate in "No-Spend" challenges to curb impulsive buying. Earn badges and celebrate your discipline.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="security" class="security-section">
+        <div class="container">
+            <h2 class="section-title">Your Security is Our Priority</h2>
+            <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto;">We understand that your financial data is sensitive. That's why we employ state-of-the-art security measures to keep your information safe and private.</p>
+            
+            <div class="security-badges">
+                <div class="security-item">
+                    <i class="fas fa-lock security-icon"></i>
+                    <h3>Encrypted Data</h3>
+                    <p class="card-text" style="font-size: 0.9rem;">Your data is encrypted at rest and in transit using industry-standard protocols.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-user-shield security-icon"></i>
+                    <h3>Private & Confidential</h3>
+                    <p class="card-text" style="font-size: 0.9rem;">We never sell your personal data. Your financial journey is yours alone.</p>
+                </div>
+                <div class="security-item">
+                    <i class="fas fa-server security-icon"></i>
+                    <h3>Secure Infrastructure</h3>
+                    <p class="card-text" style="font-size: 0.9rem;">Hosted on secure servers with regular backups and 24/7 monitoring.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-left">
+                <span class="footer-logo"><i class="fas fa-wallet"></i> Personal Finance Tracker</span>
+            </div>
+            
+            <div class="footer-center">
+                 <span class="copyright">&copy; {% now "Y" %} Personal Finance Tracker. All rights reserved.</span>
+            </div>
+            
+            <div class="footer-right">
+                <span style="font-size: 0.9rem; margin-right: 1.5rem;">Designed by <span style="color: var(--primary); font-weight: bold;">Harish Naik</span></span>
+                <div class="social-links">
+                    <a href="https://github.com/Harishnaik14/" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="https://www.linkedin.com/in/harish-naik-245b8b332?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* Footer Compact Styles */
+        footer {
+            text-align: center;
+            padding: 1rem 2rem; /* Reduced padding */
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            margin-top: 5rem;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 !important;
+            width: 100%;
+        }
+        
+        .footer-logo {
+             font-size: 1.1rem; 
+             font-weight: bold; 
+             color: var(--text-main);
+             white-space: nowrap;
+        }
+        
+        .footer-left {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .footer-center {
+            flex: 2;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .footer-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 1rem 0 !important;
+            }
+            
+            .footer-left, .footer-center, .footer-right {
+                text-align: center;
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .footer-right {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .footer-center {
+                white-space: normal;
+            }
+            
+            .footer-right span {
+                margin-right: 0 !important;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('themeToggle');
+            const icon = toggleBtn.querySelector('i');
+            const body = document.body;
+            // Check saved theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            body.setAttribute('data-theme', savedTheme);
+            updateIcon(savedTheme);
+            
+            toggleBtn.addEventListener('click', () => {
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+            
+            function updateIcon(theme) {
+                if (theme === 'light') {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+            
+            // Mobile Menu Toggle
+            const mobileToggle = document.getElementById('mobileToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if(mobileToggle && navLinks){
+                mobileToggle.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                    const icon = mobileToggle.querySelector('i');
+                    if(navLinks.classList.contains('active')){
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+                
+                // Close menu when clicking a link
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        mobileToggle.querySelector('i').classList.remove('fa-times');
+                        mobileToggle.querySelector('i').classList.add('fa-bars');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

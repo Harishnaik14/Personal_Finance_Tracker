@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load currency_filters %}
+
+{% block title %}No-Spend Challenges - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-trophy text-warning me-2"></i> No-Spend Challenges</h1>
+</div>
+
+<div class="row">
+    <!-- Active Challenges & New Challenge -->
+    <div class="col-lg-8">
+        {% if active_challenge %}
+        <div class="card shadow-sm border-0 rounded-3 mb-4 bg-primary text-white overflow-hidden active-challenge-card">
+            <div class="card-body p-4 position-relative">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="badge bg-white text-primary mb-2">ACTIVE CHALLENGE</span>
+                        <h3 class="fw-bold mb-0">{{ active_challenge.get_challenge_type_display }}</h3>
+                        <p class="mb-0 opacity-75">Started on {{ active_challenge.start_date }}</p>
+                    </div>
+                    <div class="display-4"><i class="fas fa-shield-alt text-white opacity-25"></i></div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Time Remaining</span>
+                        <span>{{ days_left }} Days left</span>
+                    </div>
+                    <div class="progress bg-white bg-opacity-25" style="height: 10px; border-radius: 5px;">
+                        <div class="progress-bar bg-white shadow-sm" role="progressbar" style="width: {{ progress_percent }}%" aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center p-3 bg-white bg-opacity-10 rounded-3">
+                    <i class="fas fa-exclamation-triangle me-3 fs-3"></i>
+                    <div>
+                        <p class="mb-0 fw-bold">Maintain discipline!</p>
+                        <small>Recording any expense will cause this challenge to fail.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white bg-opacity-10 border-0 py-3 px-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small">Target End Date: <strong>{{ active_challenge.end_date }}</strong></span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- New Challenge Selection -->
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0">Start a New Challenge</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="challenge-option border rounded-4 p-4 text-center h-100" data-type="Day">
+                            <div class="icon-box bg-info bg-opacity-10 rounded-circle w-60 h-60 mx-auto mb-3 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-calendar-day fs-2 text-info"></i>
+                            </div>
+                            <h5 class="fw-bold">No-Spend Day</h5>
+                            <p class="text-muted small">Commit to zero spending for the next 24 hours.</p>
+                            <form action="{% url 'start_challenge' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="type" value="Day">
+                                <button type="submit" class="btn btn-outline-info rounded-pill w-100 fw-bold">Start Day</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="challenge-option border rounded-4 p-4 text-center h-100" data-type="Weekend">
+                            <div class="icon-box bg-primary bg-opacity-10 rounded-circle w-60 h-60 mx-auto mb-3 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-umbrella-beach fs-2 text-primary"></i>
+                            </div>
+                            <h5 class="fw-bold">No-Spend Weekend</h5>
+                            <p class="text-muted small">Stay disciplined from Friday to Sunday night.</p>
+                            <form action="{% url 'start_challenge' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="type" value="Weekend">
+                                <button type="submit" class="btn btn-outline-primary rounded-pill w-100 fw-bold">Start Weekend</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="challenge-option border rounded-4 p-4 text-center h-100" data-type="Month">
+                            <div class="icon-box bg-warning bg-opacity-10 rounded-circle w-60 h-60 mx-auto mb-3 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-gem fs-2 text-warning"></i>
+                            </div>
+                            <h5 class="fw-bold">No-Spend Month</h5>
+                            <p class="text-muted small">The ultimate test. Zero small luxury spending for 30 days.</p>
+                            <form action="{% url 'start_challenge' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="type" value="Month">
+                                <button type="submit" class="btn btn-outline-warning rounded-pill w-100 fw-bold">Start Month</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Challenge History -->
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0">Previous Efforts</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Challenge</th>
+                                <th>Date Range</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ch in past_challenges %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ ch.get_challenge_type_display }}</div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ ch.start_date }} to {{ ch.end_date }}</small>
+                                </td>
+                                <td class="text-center">
+                                    {% if ch.is_successful %}
+                                    <span class="badge bg-success-soft text-success px-3 py-2 rounded-pill shadow-sm border-success border">
+                                        <i class="fas fa-check-circle me-1"></i> Success
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger-soft text-danger px-3 py-2 rounded-pill shadow-sm border-danger border">
+                                        <i class="fas fa-times-circle me-1"></i> Failed
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">No completed challenges yet. Time to start one!</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trophy Room (Badges) -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 rounded-3 h-100 trophy-room-card">
+            <div class="card-header bg-white py-3 border-0 text-center">
+                <h5 class="fw-bold mb-0"><i class="fas fa-award text-warning me-2"></i> Trophy Room</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for badge in badges %}
+                    <div class="col-6 text-center">
+                        <div class="badge-item p-3 border rounded-3 bg-white shadow-xs card-hover-effect mb-2 badge-glow">
+                            <div class="fs-1 text-warning mb-2 h-40 d-flex align-items-center justify-content-center glow-icon">
+                                <i class="fas {{ badge.icon }}"></i>
+                            </div>
+                            <div class="fw-bold small">{{ badge.name }}</div>
+                            <div class="text-muted" style="font-size: 0.65rem;">{{ badge.awarded_at|date:"M Y" }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <div class="mb-3 opacity-25">
+                            <i class="fas fa-trophy fa-4x"></i>
+                        </div>
+                        <p class="text-muted">Earn your first badge by completing a challenge!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-light border-0 py-3 text-center">
+                <small class="text-muted">Success Rate: <strong>{{ success_rate }}%</strong></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .w-60 { width: 60px; }
+    .h-60 { height: 60px; }
+    .h-40 { height: 40px; }
+    .shadow-xs { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    
+    .active-challenge-card {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .bg-success-soft { background-color: #e8f5e9; }
+    .bg-danger-soft { background-color: #feebee; }
+
+    .challenge-option {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .challenge-option:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-color: var(--bs-primary) !important;
+    }
+
+    .card-hover-effect {
+        transition: transform 0.3s ease;
+    }
+    .card-hover-effect:hover {
+        transform: scale(1.05);
+    }
+
+    .badge-glow {
+        border: 1px solid #ffd700 !important;
+        background: linear-gradient(135deg, #ffffff 0%, #fffdf2 100%) !important;
+        transition: all 0.3s ease;
+    }
+    .badge-glow:hover {
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4) !important;
+        background: linear-gradient(135deg, #fffdf2 0%, #fff9e6 100%) !important;
+    }
+
+    .glow-icon {
+        filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
+        animation: icon-float 3s ease-in-out infinite;
+    }
+
+    @keyframes icon-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    @keyframes pulse-white {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.5; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .congrats-pulse {
+        animation: pulse-white 2s infinite;
+    }
+</style>
+{% endblock %}

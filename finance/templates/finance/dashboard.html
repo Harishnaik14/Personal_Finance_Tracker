@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load currency_filters %}
+
+{% block title %}Dashboard - Finance Tracker{% endblock %}
+
+{% block content %}
+<p class="mb-4 fw-bold fs-4" style="letter-spacing: 0.5px; color: #0d6efd;">
+    {% if user.is_authenticated %}
+    Welcome, <span style="color: #b8860b;">{{ user.username|title }}!</span>
+    {% else %}
+    Welcome, <span style="color: #b8860b;">Guest!</span>
+    {% endif %}
+</p>
+
+{% if active_challenge %}
+<div class="alert border-0 shadow-sm p-4 mb-4 text-white d-flex justify-content-between align-items-center rounded-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="d-flex align-items-center">
+        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+            <i class="fas fa-shield-alt fs-4"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-1">Active Challenge: {{ active_challenge.obj.get_challenge_type_display }}</h5>
+            <p class="mb-0 small opacity-75">Keep it up! You have <strong>{{ active_challenge.days_left }} days</strong> left to win your badge.</p>
+        </div>
+    </div>
+    <div class="text-end d-none d-md-block" style="min-width: 150px;">
+        <div class="small mb-1">Current Progress</div>
+        <div class="progress bg-white bg-opacity-25" style="height: 6px;">
+            <div class="progress-bar bg-white" style="width: {{ active_challenge.percent }}%"></div>
+        </div>
+    </div>
+    <a href="{% if user.is_authenticated %}{% url 'challenge_list' %}{% else %}#{% endif %}" class="btn btn-sm btn-light rounded-pill px-3 ms-3" {% if not user.is_authenticated %}data-bs-toggle="modal" data-bs-target="#loginRequiredModal"{% endif %}>Details</a>
+</div>
+{% endif %}
+
+{% if messages %}
+    {% for message in messages %}
+        {% if 'opening_balance_alert' in message.tags %}
+        <div class="alert alert-info border-0 shadow-sm p-4 mb-4 d-flex justify-content-between align-items-center rounded-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="d-flex align-items-center">
+                <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                    <i class="fas fa-wallet fs-4"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-1">Set Your Opening Balance</h5>
+                    <p class="mb-0 small opacity-90">{{ message }}</p>
+                </div>
+            </div>
+            <a href="{% if user.is_authenticated %}{% url 'settings' %}{% else %}#{% endif %}" class="btn btn-sm btn-light rounded-pill px-4 ms-3" {% if not user.is_authenticated %}data-bs-toggle="modal" data-bs-target="#loginRequiredModal"{% endif %}>
+                <i class="fas fa-cog me-2"></i>Go to Settings
+            </a>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+
+
+    <!-- Summary Cards -->
+    <div class="col">
+        <div class="card text-white bg-primary shadow-sm h-100 border-0">
+            <div class="card-header bg-transparent border-0 opacity-75">Income</div>
+            <div class="card-body">
+                <h3 class="card-title fw-bold">{{ currency_symbol }}{{ income }}</h3>
+                <p class="card-text mt-1"><i class="fas fa-hand-holding-usd"></i> This Month</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-white bg-danger shadow-sm h-100 border-0">
+            <div class="card-header bg-transparent border-0 opacity-75">Expenses</div>
+            <div class="card-body">
+                <h3 class="card-title fw-bold">{{ currency_symbol }}{{ expense }}</h3>
+                <p class="card-text mt-1"><i class="fas fa-shopping-cart"></i> This Month</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-white bg-success shadow-sm h-100 border-0">
+            <div class="card-header bg-transparent border-0 opacity-75">Balance</div>
+            <div class="card-body">
+                <h3 class="card-title fw-bold">{{ currency_symbol }}{{ balance }}</h3>
+                <p class="card-text mt-1"><i class="fas fa-wallet"></i> Total</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if has_prev_data or spending_insights %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0" style="color: #2c3e50;">
+                    <i class="fas fa-chart-line text-primary me-2"></i> Spending Insights
+                </h5>
+                <p class="text-muted small mb-0">How your spending this month compares to last month</p>
+            </div>
+            <div class="card-body p-4">
+                {% if total_insight %}
+                <div class="alert {% if total_insight.status == 'increase' %}alert-light border-danger text-danger{% else %}alert-light border-success text-success{% endif %} border-start border-4 shadow-sm mb-4 d-flex align-items-center">
+                    <i class="fas {% if total_insight.status == 'increase' %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %} fa-lg me-3"></i>
+                    <span class="fw-semibold">{{ total_insight.text }}</span>
+                </div>
+                {% endif %}
+
+                <div class="d-flex flex-nowrap overflow-auto pb-2 scroll-container">
+                    {% for insight in spending_insights %}
+                    <div class="flex-shrink-0 me-3" style="width: 280px;">
+                        <div class="p-3 rounded-3 h-100 bg-light border-0 card-hover-effect">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-white p-2 rounded-circle shadow-sm me-3">
+                                    <i class="fas {% if insight.status == 'increase' %}fa-arrow-up text-danger{% elif insight.status == 'decrease' %}fa-arrow-down text-success{% else %}fa-plus text-info{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-dark">{{ insight.category }}</h6>
+                                    <p class="small text-muted mb-0" style="line-height: 1.4;">{{ insight.text }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-4">
+                        <i class="fas fa-coffee fa-3x text-light mb-3"></i>
+                        <p class="text-muted mb-0">No significant category changes detected this month.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Financial Goals Summary -->
+{% if top_goals %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: #2c3e50;">
+                        <i class="fas fa-bullseye text-primary me-2"></i> Financial Goals
+                    </h5>
+                    <p class="text-muted small mb-0">Your progress towards key milestones</p>
+                </div>
+                <a href="{% if user.is_authenticated %}{% url 'goal_list' %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary rounded-pill px-3" {% if not user.is_authenticated %}data-bs-toggle="modal" data-bs-target="#loginRequiredModal"{% endif %}>View All Goals</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    {% for goal in top_goals %}
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 bg-light border-0 card-hover-effect">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-dark">{{ goal.name }}</span>
+                                <span class="badge bg-{{ goal.status_color }} text-white">{{ goal.percent }}%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; border-radius: 3px;">
+                                <div class="progress-bar bg-{{ goal.status_color }}" role="progressbar" style="width: {{ goal.percent }}%" 
+                                     aria-valuenow="{{ goal.percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .scroll-container::-webkit-scrollbar {
+        height: 6px;
+    }
+    .scroll-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #999;
+    }
+    .card-hover-effect {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover-effect:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+</style>
+
+
+<div class="row">
+    <!-- Charts -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                Expense Breakdown
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="height: 400px;">
+                <canvas id="expenseChart" style="max-height: 100%; max-width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Transactions -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                Latest Transactions
+                <div>
+                    <a href="{% url 'transaction_create' %}" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-plus"></i> Add Transaction</a>
+                    <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body p-0" style="height: 400px; overflow-y: auto;">
+                <ul class="list-group list-group-flush">
+                    {% for transaction in recent_transactions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ transaction.category.name }}</strong><br>
+                            <small class="text-muted">{{ transaction.date }}</small>
+                        </div>
+                        <span class="badg rounded-pill {% if transaction.category.type == 'income' %}text-bg-success{% else %}text-bg-danger{% endif %}">
+                            {{ currency_symbol }}{{ transaction.amount|currency_convert:user_currency }}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center text-muted">No recent transactions.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Expense Breakdown Chart
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                label: 'Expenses',
+                data: {{ category_data|safe }},
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

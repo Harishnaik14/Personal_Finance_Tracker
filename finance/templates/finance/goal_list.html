@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load currency_filters %}
+
+{% block title %}Financial Goals - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-bullseye text-primary me-2"></i> Financial Goals</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+            <i class="fas fa-plus me-1"></i> Add New Goal
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for item in goals %}
+    <div class="col-md-6 col-lg-3">
+        <div class="card shadow-sm border-0 rounded-3 h-100 goal-card overflow-hidden position-relative">
+            {% if item.percent >= 100 %}
+            <div class="confetti-container">
+                <div class="confetti-item" style="left: 10%; background: #ff0000; animation-delay: 0s;"></div>
+                <div class="confetti-item" style="left: 30%; background: #00ff00; animation-delay: 0.5s;"></div>
+                <div class="confetti-item" style="left: 50%; background: #0000ff; animation-delay: 1s;"></div>
+                <div class="confetti-item" style="left: 70%; background: #ffff00; animation-delay: 0.2s;"></div>
+                <div class="confetti-item" style="left: 90%; background: #ff00ff; animation-delay: 0.8s;"></div>
+                <div class="confetti-item" style="left: 20%; background: #00ffff; animation-delay: 1.2s;"></div>
+                <div class="confetti-item" style="left: 80%; background: #ff8800; animation-delay: 0.4s;"></div>
+            </div>
+            {% endif %}
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge bg-light text-primary border mb-1" style="font-size: 0.65rem;">{{ item.goal.category }}</span>
+                        <h6 class="fw-bold mb-0 text-truncate" style="max-width: 150px;">{{ item.goal.name }}</h6>
+                        <small class="text-muted d-block mb-1" style="font-size: 0.7rem;">Started: {{ item.goal.start_date }}</small>
+                    </div>
+                    <form action="{% url 'goal_delete' item.goal.pk %}" method="post" onsubmit="return confirm('Are you sure you want to delete this goal?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link text-muted p-0" style="font-size: 0.8rem;"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+ 
+                <div class="progress-box mb-3 text-center position-relative">
+                    {% if item.percent >= 100 %}
+                    <div class="congrats-banner mb-2">
+                        <span class="badge bg-{{ item.status_color }} text-white px-3 py-2 rounded-pill shadow-sm congrats-pulse">
+                            <i class="fas fa-trophy me-2"></i> Congratulations!
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-center mb-2">
+                        <div class="rounded-circle border border-4 border-{{ item.status_color }} d-flex align-items-center justify-content-center {% if item.percent >= 100 %}celebration-ring{% endif %}" style="width: 70px; height: 70px;">
+                            <h5 class="fw-bold mb-0 text-{{ item.status_color }}">{{ item.percent|floatformat:0 }}%</h5>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted" style="font-size: 0.75rem;">Target: {{ request.user.currency_symbol }}{{ item.goal.target_amount|currency_convert:request.user }}</small>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 3px;">
+                        <div class="progress-bar bg-{{ item.status_color }} {% if item.percent >= 100 %}progress-bar-striped progress-bar-animated{% endif %}" role="progressbar" style="width: {{ item.percent }}%" 
+                             aria-valuenow="{{ item.percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+ 
+                <div class="row g-0 border-top pt-2">
+                    <div class="col-6 border-end text-center">
+                        <small class="text-muted d-block" style="font-size: 0.65rem;">Saved</small>
+                        <span class="fw-bold text-success small">{{ request.user.currency_symbol }}{{ item.saved|currency_convert:request.user }}</span>
+                    </div>
+                    <div class="col-6 text-center">
+                        <small class="text-muted d-block" style="font-size: 0.65rem;">Remaining</small>
+                        <span class="fw-bold text-danger small">{{ request.user.currency_symbol }}{{ item.remaining|currency_convert:request.user }}</span>
+                    </div>
+                </div>
+ 
+                <div class="mt-3 pt-3 border-top">
+                    {% if item.percent >= 100 %}
+                    <button type="button" class="btn btn-success btn-sm w-100 rounded-pill fw-bold" disabled>
+                        <i class="fas fa-check-circle me-2"></i> Goal Completed
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-success btn-sm w-100 rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#addMoneyModal{{ item.goal.pk }}">
+                        <i class="fas fa-coins me-2"></i> Add Money
+                    </button>
+                    {% endif %}
+                </div>
+
+                {% if item.savings_breakdown %}
+                <div class="mt-3 p-2 bg-light rounded-3 border border-dashed border-primary" style="font-size: 0.8rem;">
+                    <div class="text-center mb-2">
+                        <i class="fas fa-magic text-warning me-1" style="font-size: 0.7rem;"></i>
+                        <span class="fw-bold">Smart Breakdown</span>
+                        <p class="text-muted mb-0" style="font-size: 0.7rem;">Target: {{ item.goal.target_date }}</p>
+                    </div>
+                    
+                    <div class="row g-1 text-center">
+                        <div class="col-6 mb-1">
+                            <div class="p-1 bg-white rounded shadow-xs border">
+                                <small class="d-block text-muted" style="font-size: 0.65rem;">Daily</small>
+                                <span class="fw-bold">{{ request.user.currency_symbol }}{{ item.savings_breakdown.daily|currency_convert:request.user }}</span>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-1">
+                            <div class="p-1 bg-white rounded shadow-xs border">
+                                <small class="d-block text-muted" style="font-size: 0.65rem;">Monthly</small>
+                                <span class="fw-bold">{{ request.user.currency_symbol }}{{ item.savings_breakdown.monthly|currency_convert:request.user }}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-1 bg-white rounded shadow-xs border">
+                                <small class="d-block text-muted" style="font-size: 0.65rem;">Quarterly</small>
+                                <span class="fw-bold">{{ request.user.currency_symbol }}{{ item.savings_breakdown.quarterly|currency_convert:request.user }}</span>
+                            </div>
+                        </div>
+                        {% if item.savings_breakdown.yearly %}
+                        <div class="col-6">
+                            <div class="p-1 bg-white rounded shadow-xs border">
+                                <small class="d-block text-muted" style="font-size: 0.65rem;">Yearly</small>
+                                <span class="fw-bold">{{ request.user.currency_symbol }}{{ item.savings_breakdown.yearly|currency_convert:request.user }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-6 d-flex align-items-center justify-content-center">
+                            <small class="text-muted opacity-50" style="font-size: 0.65rem;">{{ item.savings_breakdown.total_years }}Y left</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% elif item.goal.target_date %}
+                 <div class="mt-4 p-3 bg-light rounded-3 text-center small border border-dashed text-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Target date reached or overdue.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="mb-3">
+            <i class="fas fa-map-marked-alt fa-4x text-light"></i>
+        </div>
+        <h4 class="text-muted">No goals set yet</h4>
+        <p class="text-muted">Start by adding your first financial milestone!</p>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+            <i class="fas fa-plus me-1"></i> Create New Goal
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Goal Modal -->
+<div class="modal fade" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-bottom-0 p-4">
+                <h5 class="modal-title fw-bold" id="addGoalModalLabel">Set New Financial Goal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body p-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Goal Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g., Save for New Laptop" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Target Amount (INR)</label>
+                            <input type="number" step="0.01" name="target_amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select name="category" class="form-select">
+                                <option value="Emergency Fund">Emergency Fund</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Education">Education</option>
+                                <option value="Home">Home</option>
+                                <option value="Vehicle">Vehicle</option>
+                                <option value="Gadgets">Gadgets</option>
+                                <option value="Other" selected>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Target Date (Optional)</label>
+                            <input type="date" name="target_date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Create Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Money Modals (One for each goal) -->
+{% for item in goals %}
+<div class="modal fade" id="addMoneyModal{{ item.goal.pk }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white border-bottom-0 p-3">
+                <h6 class="modal-title fw-bold">Deposit: {{ item.goal.name }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'goal_add_money' item.goal.pk %}" method="post">
+                <div class="modal-body p-4 text-center">
+                    {% csrf_token %}
+                    <label class="form-label small text-muted text-uppercase fw-bold mb-3">Deposit Amount (INR)</label>
+                    <div class="input-group mb-0">
+                        <span class="input-group-text bg-white border-end-0 fs-5">{{ request.user.currency_symbol }}</span>
+                        <input type="number" step="0.01" name="amount" class="form-control border-start-0 fs-4 fw-bold p-2" placeholder="0.00" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold shadow-sm py-2">Confirm Deposit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+    .goal-card {
+        transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .goal-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.12) !important;
+    }
+    .border-dashed {
+        border-style: dashed !important;
+    }
+    
+    /* Celebrations */
+    @keyframes congrats-pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+    .congrats-pulse {
+        animation: congrats-pulse 2s infinite;
+    }
+    
+    @keyframes celebration-ring {
+        0% { border-color: #28a745; box-shadow: 0 0 5px #28a745; }
+        50% { border-color: #ffc107; box-shadow: 0 0 20px #ffc107; }
+        100% { border-color: #28a745; box-shadow: 0 0 5px #28a745; }
+    }
+    .celebration-ring {
+        animation: celebration-ring 3s infinite;
+    }
+    
+    /* Confetti Effect */
+    .confetti-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        overflow: hidden; pointer-events: none;
+    }
+    .confetti-item {
+        position: absolute;
+        width: 6px; height: 6px;
+        background: #f00; opacity: 0.8;
+        top: -10px;
+        animation: confetti-fall 3s linear infinite;
+    }
+    @keyframes confetti-fall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
+    }
+</style>
+{% endblock %}

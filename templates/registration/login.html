@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center flex-grow-1 auth-bg" style="min-height: 80vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-primary py-4 text-center border-0">
+                <i class="fas fa-hand-holding-dollar fa-3x text-warning mb-2"></i>
+                <h4 class="text-white fw-bold mb-0">Welcome Back</h4>
+                <p class="text-white-50 small mb-0">Sign in to manage your budget</p>
+            </div>
+            <button class="btn btn-link nav-link" id="themeToggle" title="Toggle Theme">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="card-body p-4">
+                <form method="post" id="loginForm">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">
+                            {% for error in form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label fw-semibold small">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-user"></i></span>
+                            <input type="text" name="username" class="form-control bg-light border-start-0 ps-0" id="id_username" placeholder="Enter username" required autofocus>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label fw-semibold small">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-lock"></i></span>
+                            <input type="password" name="password" class="form-control bg-light border-start-0 ps-0" id="id_password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="showPasswordToggle">
+                            <label class="form-check-label small text-muted" for="showPasswordToggle">Show Password</label>
+                        </div>
+                        <a href="{% url 'forgot_password' %}" class="small text-decoration-none fw-semibold">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-login w-100 py-2 fw-bold text-white shadow-sm text-uppercase">
+                        SIGN IN <i class="fas fa-arrow-right ms-2 small"></i>
+                    </button>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="text-muted small">Don't have an account? <a href="{% url 'register' %}" class="fw-bold text-decoration-none">Register Here</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-bg {
+        background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url("{% static 'images/auth_bg.png' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        border-radius: 15px;
+        margin: 20px 0;
+    }
+    [data-bs-theme="dark"] .auth-bg {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("{% static 'images/auth_bg.png' %}");
+    }
+    .btn-login {
+        background-color: #0d47a1 !important; /* Rich Solid Blue */
+        border: none;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+    .btn-login:hover {
+        background-color: #1565c0 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var showPassToggle = document.getElementById('showPasswordToggle');
+        
+        if(showPassToggle){
+            showPassToggle.addEventListener('change', function(){
+                var type = this.checked ? 'text' : 'password';
+                var passwordFields = document.querySelectorAll('input[type="password"], input[name*="password"], input[id*="password"]');
+                for (var i = 0; i < passwordFields.length; i++) {
+                    passwordFields[i].type = type;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

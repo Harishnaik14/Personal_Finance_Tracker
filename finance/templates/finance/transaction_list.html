@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load currency_filters %}
+
+{% block title %}Transactions - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Transactions</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="dropdown me-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="monthDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-calendar-week me-1"></i> 
+                {% if current_month == 'all' %}All Months{% else %}
+                    {% for m in months %}{% if m.num == current_month %}{{ m.name }}{% endif %}{% endfor %}
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="monthDropdown">
+                <li><a class="dropdown-item {% if current_month == 'all' %}active{% endif %}" href="?year={{ current_year }}&month=all&sort={{ current_sort }}">All Months</a></li>
+                <li><hr class="dropdown-divider"></li>
+                {% for m in months %}
+                <li>
+                    <a class="dropdown-item {% if m.num == current_month %}active{% endif %} {% if m.disabled %}disabled text-muted{% endif %}" 
+                       href="{% if not m.disabled %}?year={{ current_year }}&month={{ m.num }}&sort={{ current_sort }}{% else %}#{% endif %}"
+                       {% if m.disabled %}aria-disabled="true" tabindex="-1"{% endif %}>
+                       {{ m.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="dropdown me-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="yearDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-calendar-alt me-1"></i> {{ current_year }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="yearDropdown">
+                {% for year in years_list %}
+                <li><a class="dropdown-item {% if year == current_year %}active{% endif %}" href="?year={{ year }}&month={{ current_month }}&sort={{ current_sort }}">{{ year }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{% url 'transaction_create' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-plus"></i> Add Transaction
+        </a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">
+                    <a href="?year={{ current_year }}&month={{ current_month }}&sort=date" class="text-decoration-none text-dark">
+                        Date {% if current_sort == 'date' %}<i class="fas fa-sort-down"></i>{% endif %}
+                    </a>
+                </th>
+                {% if current_sort != 'category' %}
+                <th scope="col">
+                    <a href="?year={{ current_year }}&month={{ current_month }}&sort=category" class="text-decoration-none text-dark">
+                        Category {% if current_sort == 'category' %}<i class="fas fa-sort-down"></i>{% endif %}
+                    </a>
+                </th>
+                {% endif %}
+                <th scope="col">Description</th>
+                <th scope="col">Amount</th>
+                {% if user.is_authenticated %}<th scope="col">Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            {% if current_sort == 'category' %}
+                {% ifchanged transaction.category.name %}
+                <tr class="table-secondary">
+                    <td colspan="4" class="fw-bold text-uppercase ps-3">{{ transaction.category.name|default:"Uncategorized" }}</td>
+                </tr>
+                {% endifchanged %}
+            {% endif %}
+            <tr>
+                <td>{{ transaction.date|date:"M d, Y" }}</td>
+                {% if current_sort != 'category' %}
+                <td>
+                    {% if transaction.category.type == 'income' %}
+                        <span class="badge bg-success">{{ transaction.category.name }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ transaction.category.name }}</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                <td>{{ transaction.description }}</td>
+                <td class="{% if transaction.category.type == 'income' %}text-success{% else %}text-danger{% endif %} fw-bold">
+                    {% if transaction.category.type == 'income' %}+{% else %}-{% endif %}{{ currency_symbol }}{{ transaction.amount|currency_convert:user_currency }}
+                </td>
+                {% if user.is_authenticated %}
+                <td>
+                    <a href="{% url 'transaction_update' transaction.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'transaction_delete' transaction.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if current_sort == 'category' %}4{% else %}5{% endif %}" class="text-center">No transactions found. Add one now!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

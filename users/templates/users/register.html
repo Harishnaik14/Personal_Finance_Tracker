@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center flex-grow-1 auth-bg" style="min-height: 80vh;">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 rounded-4 overflow-hidden my-5">
+            <div class="card-header bg-success py-4 text-center border-0">
+                <i class="fas fa-user-plus fa-3x text-white mb-2"></i>
+                <h4 class="text-white fw-bold mb-0">Create Account</h4>
+                <p class="text-white-50 small mb-0">Join our community of smart spenders</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="registrationForm">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">
+                            {% for error in form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold small">{{ field.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    {% if 'username' in field.name %}<i class="fas fa-user"></i>
+                                    {% elif 'email' in field.name %}<i class="fas fa-envelope"></i>
+                                    {% elif 'password' in field.name %}<i class="fas fa-lock"></i>
+                                    {% else %}<i class="fas fa-pen-nib"></i>
+                                    {% endif %}
+                                </span>
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <div class="form-text extra-small opacity-75">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger extra-small mt-1"><i class="fas fa-times-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="showPasswordToggle">
+                        <label class="form-check-label small text-muted" for="showPasswordToggle">Show Password</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-register w-100 py-2 fw-bold text-white shadow-sm text-uppercase">
+                        CREATE ACCOUNT <i class="fas fa-check-circle ms-2 small"></i>
+                    </button>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="text-muted small">Already have an account? <a href="{% url 'login' %}" class="fw-bold text-decoration-none">Login Here</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-bg {
+        background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url("{% static 'images/auth_bg.png' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        border-radius: 15px;
+        margin: 20px 0;
+    }
+    [data-bs-theme="dark"] .auth-bg {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("{% static 'images/auth_bg.png' %}");
+    }
+    .btn-register {
+        background-color: #1b5e20 !important; /* Rich Solid Green */
+        border: none;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+    .btn-register:hover {
+        background-color: #2e7d32 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.getElementById('registrationForm');
+        var inputs = form.querySelectorAll('input');
+        var showPassToggle = document.getElementById('showPasswordToggle');
+        
+        // 1. Setup Bootstrap Classes & Placeholder
+        for (var i = 0; i < inputs.length; i++) {
+            var input = inputs[i];
+            if(input.type !== 'checkbox'){
+                input.classList.add('form-control', 'bg-light', 'border-start-0', 'ps-0');
+                var label = form.querySelector('label[for="' + input.id + '"]');
+                if(label && !input.placeholder) {
+                    input.placeholder = 'Enter ' + label.textContent.trim();
+                }
+            }
+        }
+
+        // 2. Custom Username Validation Hints
+        var usernameInput = form.querySelector('input[name="username"]');
+        if(usernameInput) {
+            usernameInput.setAttribute('minlength', '4');
+            usernameInput.setAttribute('maxlength', '12');
+            usernameInput.setAttribute('pattern', '^[a-zA-Z0-9_]+$');
+            usernameInput.title = '4-12 characters, letters, numbers, and underscores only';
+        }
+
+        // 3. Setup Password Toggle
+        if(showPassToggle){
+            showPassToggle.addEventListener('change', function(){
+                var type = this.checked ? 'text' : 'password';
+                var passwordFields = form.querySelectorAll('input[type="password"], input[name*="password"], input[id*="password"]');
+                for (var j = 0; j < passwordFields.length; j++) {
+                    passwordFields[j].type = type;
+                }
+            });
+        }
+
+        // 4. Password Matching Validation (Live)
+        var passFields = Array.from(inputs).filter(function(input) {
+            return input.name.toLowerCase().indexOf('password') !== -1;
+        });
+
+        if(passFields.length >= 2){
+            var pass1 = passFields[0];
+            var pass2 = passFields[1];
+            
+            function validate() {
+                if(pass1.value && pass2.value){
+                    if(pass1.value !== pass2.value){
+                        pass2.classList.add('is-invalid');
+                        pass2.classList.remove('is-valid');
+                    } else {
+                        pass2.classList.remove('is-invalid');
+                        pass2.classList.add('is-valid');
+                    }
+                } else {
+                    pass2.classList.remove('is-invalid');
+                    pass2.classList.remove('is-valid');
+                }
+            }
+            pass1.addEventListener('input', validate);
+            pass2.addEventListener('input', validate);
+        }
+    });
+</script>
+{% endblock %}

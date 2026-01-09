@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Income vs Expense - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Income vs Expense</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="yearDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-calendar-alt me-1"></i> {{ current_year }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="yearDropdown">
+                {% for year in years_list %}
+                <li><a class="dropdown-item {% if year == current_year %}active{% endif %}" href="?year={{ year }}">{{ year }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Monthly Cash Flow</h5>
+                    <div class="small text-muted">Comparison of Total Income and Expenses</div>
+                </div>
+                <div style="height: 350px;">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-3 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: #2c3e50;">
+                        <i class="fas fa-robot text-primary me-2"></i> AI Spending Prediction
+                    </h5>
+                    <p class="text-muted small mb-0">Based on your historical spending habits</p>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div style="height: 300px;">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card shadow-sm border-0 rounded-3 h-100 text-white" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+            <div class="card-header bg-transparent border-bottom-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-magic me-2"></i> AI Suggestions</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="prediction-summary mb-4 p-3 rounded-3" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <small class="opacity-75 d-block mb-1 text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Next Month Estimate</small>
+                    <h2 class="fw-bold mb-0 text-info">{{ request.user.currency_symbol }}{{ prediction_total }}</h2>
+                </div>
+                
+                <div class="suggestions-list">
+                    {% for item in ai_suggestions %}
+                    <div class="suggestion-item p-3 mb-3 rounded-3 small d-flex align-items-start shadow-sm border-0" 
+                         style="background: rgba(255, 255, 255, 0.08); transition: all 0.2s ease; border-left: 4px solid {% if item.type == 'warning' %}#fbbf24{% elif item.type == 'success' %}#10b981{% else %}#3b82f6{% endif %} !important;">
+                        <span class="me-3 fs-5">{{ item.icon }}</span>
+                        <span class="opacity-90">{{ item.text }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="small opacity-75">More data needed for personalized tips.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="alert alert-info border-0 shadow-sm rounded-3 p-4">
+            <div class="d-flex">
+                <i class="fas fa-info-circle fs-4 me-3 mt-1"></i>
+                <div>
+                    <h5 class="fw-bold">Analyze Your Cash Flow</h5>
+                    <p class="mb-0">This chart helps you visualize your <strong>Savings Margin</strong>. Ideally, the green line (Income) should stay well above the red line (Expenses).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Comparison Chart
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ months_labels|safe }},
+            datasets: [
+                {
+                    label: 'Income',
+                    data: {{ income_data|safe }},
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981'
+                },
+                {
+                    label: 'Expenses',
+                    data: {{ expense_data|safe }},
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ef4444'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': {{ request.user.currency_symbol }}' + context.raw;
+                        }
+                    }
+                }
+            },
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { callback: value => '{{ request.user.currency_symbol }}' + value }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // AI Prediction Chart
+    const pCtx = document.getElementById('predictionChart').getContext('2d');
+    const predictionLabels = {{ prediction_labels|safe }};
+    const predictionData = {{ prediction_data|safe }};
+    
+    new Chart(pCtx, {
+        type: 'line',
+        data: {
+            labels: predictionLabels,
+            datasets: [{
+                label: 'Historical Spending',
+                data: predictionData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                segment: {
+                    borderDash: ctx => ctx.p1DataIndex === predictionData.length - 1 ? [6, 6] : undefined,
+                    borderColor: ctx => ctx.p1DataIndex === predictionData.length - 1 ? '#adb5bd' : undefined
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { callback: value => '{{ request.user.currency_symbol }}' + value },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: context => {
+                            let label = context.dataset.label || '';
+                            if (context.dataIndex === predictionData.length - 1) label = 'Predicted Estimate: ';
+                            return label + ' {{ request.user.currency_symbol }}' + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

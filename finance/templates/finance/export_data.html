@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Export Financial Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-file-export me-2"></i> Export Financial Report</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-primary text-white py-3 border-0">
+                <h5 class="card-title mb-0"><i class="fas fa-sliders-h me-2"></i> Report Parameters</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="get" id="exportForm">
+                    <div class="mb-3">
+                        <label for="{{ form.file_name.id_for_label }}" class="form-label fw-bold">File Name</label>
+                        {{ form.file_name }}
+                        <div class="form-text">e.g. Monthly_Report_Dec</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold">From Date</label>
+                            {{ form.start_date }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold">To Date</label>
+                            {{ form.end_date }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.format.id_for_label }}" class="form-label fw-bold">Format</label>
+                        {{ form.format }}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.include_transactions }}
+                            <label class="form-check-label fw-bold" for="{{ form.include_transactions.id_for_label }}">
+                                {{ form.include_transactions.label }}
+                            </label>
+                            <div class="form-text">{{ form.include_transactions.help_text }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm rounded-3">
+                            <i class="fas fa-search me-2"></i> Generate Preview
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        {% if preview %}
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4 animate__animated animate__fadeIn">
+                <div class="card-header text-white py-3 border-0 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i> Financial Summary</h5>
+                    <span class="badge bg-white text-dark px-3 shadow-sm">{{ preview.count }} Transactions</span>
+                </div>
+                <div class="card-body p-4" style="background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);">
+                    <div class="alert alert-light border-0 shadow-sm mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt fs-5 me-3 text-primary"></i>
+                            <div>
+                                <strong>Period:</strong> {{ preview.start|date:"M d, Y" }} - {{ preview.end|date:"M d, Y" }}
+                                <span class="badge bg-info ms-2">{{ preview.format|upper }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <div class="card-body text-white text-center p-4">
+                                    <i class="fas fa-wallet fs-1 mb-3 opacity-75"></i>
+                                    <h6 class="text-uppercase small mb-2 opacity-75">Net Balance</h6>
+                                    <h2 class="fw-bold mb-0">{{ currency_symbol }}{{ preview.balance|floatformat:2 }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                                <div class="card-body text-white text-center p-4">
+                                    <i class="fas fa-arrow-up fs-1 mb-3 opacity-75"></i>
+                                    <h6 class="text-uppercase small mb-2 opacity-75">Total Income</h6>
+                                    <h2 class="fw-bold mb-0">{{ currency_symbol }}{{ preview.income|floatformat:2 }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);">
+                                <div class="card-body text-white text-center p-4">
+                                    <i class="fas fa-arrow-down fs-1 mb-3 opacity-75"></i>
+                                    <h6 class="text-uppercase small mb-2 opacity-75">Total Expenses</h6>
+                                    <h2 class="fw-bold mb-0">{{ currency_symbol }}{{ preview.expense|floatformat:2 }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if preview.prev_expense >= 0 %}
+                    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="card-body text-white p-4">
+                            <h6 class="text-uppercase small mb-3 opacity-75"><i class="fas fa-chart-line me-2"></i> Month-over-Month Comparison</h6>
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <p class="mb-1 small">Previous Month Expenses</p>
+                                    <h4 class="fw-bold mb-0">{{ currency_symbol }}{{ preview.prev_expense|floatformat:2 }}</h4>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    {% if preview.expense_increased %}
+                                        <div class="badge bg-danger px-3 py-2 fs-6">
+                                            <i class="fas fa-arrow-up me-1"></i> +{{ preview.expense_change_pct|floatformat:1 }}%
+                                        </div>
+                                        <p class="small mt-2 mb-0 opacity-75">You spent more this period</p>
+                                    {% else %}
+                                        <div class="badge bg-success px-3 py-2 fs-6">
+                                            <i class="fas fa-arrow-down me-1"></i> {{ preview.expense_change_pct|floatformat:1 }}%
+                                        </div>
+                                        <p class="small mt-2 mb-0 opacity-75">You spent less this period!</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if preview.expense_categories %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="fas fa-chart-pie me-2 text-primary"></i> Breakdown by Category</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <h6 class="text-center text-muted small mb-3">TOP EXPENSES</h6>
+                                    <canvas id="expenseChart" height="200"></canvas>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-center text-muted small mb-3">TOP INCOME</h6>
+                                    <canvas id="incomeChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if transactions and preview.include_transactions %}
+                    <div class="card border shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i> Transaction Details ({{ transactions|length }} items)</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0">
+                                    <thead class="sticky-top bg-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Category</th>
+                                            <th>Type</th>
+                                            <th>Description</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for trans in transactions %}
+                                        <tr>
+                                            <td><small>{{ trans.date|date:"M d, Y" }}</small></td>
+                                            <td><span class="badge bg-secondary">{{ trans.category }}</span></td>
+                                            <td>
+                                                {% if trans.type == 'income' %}
+                                                    <span class="badge bg-success"><i class="fas fa-plus me-1"></i>Income</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger"><i class="fas fa-minus me-1"></i>Expense</span>
+                                                {% endif %}
+                                            </td>
+                                            <td><small>{{ trans.description|truncatewords:8 }}</small></td>
+                                            <td class="text-end fw-bold {% if trans.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                                {{ currency_symbol }}{{ trans.amount|floatformat:2 }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid">
+                        <a href="?file_name={{ form.file_name.value }}&start_date={{ form.start_date.value }}&end_date={{ form.end_date.value }}&format={{ form.format.value }}&include_transactions={{ form.include_transactions.value }}&download=1" 
+                           class="btn btn-success btn-lg shadow-sm rounded-3 py-3 fw-bold">
+                            <i class="fas fa-download me-2"></i> Download {{ preview.format|upper }} Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card shadow-sm border-0 rounded-4 border-dashed bg-light h-100 d-flex align-items-center justify-content-center p-5 text-center">
+                <div class="opacity-50">
+                    <i class="fas fa-file-invoice-dollar fs-1 mb-3 text-primary"></i>
+                    <h4>Ready to Export?</h4>
+                    <p class="text-muted">Set your parameters and click generate preview to see your financial summary with visual breakdowns.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+{% if preview.expense_categories %}
+    // Expense Chart
+    const expenseCtx = document.getElementById('expenseChart').getContext('2d');
+    new Chart(expenseCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ preview.expense_categories|safe }},
+            datasets: [{
+                data: {{ preview.expense_amounts|safe }},
+                backgroundColor: [
+                    '#ef4444',
+                    '#f97316',
+                    '#fb923c',
+                    '#fbbf24',
+                    '#fcd34d'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': {{ currency_symbol }}' + context.parsed.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Income Chart
+    const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+    new Chart(incomeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ preview.income_categories|safe }},
+            datasets: [{
+                data: {{ preview.income_amounts|safe }},
+                backgroundColor: [
+                    '#10b981',
+                    '#34d399',
+                    '#6ee7b7',
+                    '#a7f3d0',
+                    '#d1fae5'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': {{ currency_symbol }}' + context.parsed.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+{% endif %}
+</script>
+
+<style>
+    .border-dashed {
+        border: 2px dashed #dee2e6 !important;
+    }
+    input[type="date"], select, input[placeholder], input[type="checkbox"] {
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+    }
+    select {
+        width: 100%;
+    }
+    input[type="date"]:focus, select:focus, input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        outline: 0;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+</style>
+{% endblock %}
